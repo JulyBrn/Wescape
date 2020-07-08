@@ -27,33 +27,46 @@
 </form> 
 
 <?php 
-
+    // Connection BDD
     $bdd = new PDO('mysql:host=;dbname=', '', '');
+    // include fonction pour generer le code aléatoire.
     include 'random.php';
+    // format date
     $dateValidit = date('d/m/Y', strtotime($_POST['date']));
     $date = $t->format('d/m/Y');
-   
+
     if(isset($_POST['envoiPass']))
     {
         if( !empty($_POST['valeur']) AND !empty($_POST['montant']) AND !empty($_POST['email']) AND !empty($_POST['nombrePass']) AND !empty($_POST['nomLot']) AND !empty($_POST['date']))
             {
+                //Recuperation des mails dans le text area
                 $mail = $_POST['email'];
                 $arrayOfMail = explode("\n", $mail);
+
+                // insert nom du lot dans la table lots 
+                $insertLot = $bdd->prepare("INSERT INTO lots(nom) VALUES (?)");
+                $insertLot->execute(array($_POST['nomLot']));
 
                 foreach ($arrayOfMail as $oneMail) {
                     for ($i = 0; $i < $_POST['nombrePass']; $i++) {
                         $code = generateRandomString();
 
-                        $insert = $bdd->prepare("INSERT INTO pass(montant, valeur, email, code, date_validit, dateDebut) VALUES (?, ?, ?, ?, ?, ?)");
-                        $insert->execute(array($_POST['montant'], $_POST['valeur'], $oneMail, $code, $dateValidit, $date, ));
+                        $insert = $bdd->prepare("INSERT INTO pass(montant, valeur, email, code, date_validit, dateDebut, lots_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+                        $LotsId = $bdd->prepare("SELECT lots.id  FROM lots INNER JOIN pass  ON  lots.id = pass.lots_id");
+
+                        var_dump($LotsId);
+
+                        $insert->execute(array($_POST['montant'], $_POST['valeur'], $oneMail, $code, $dateValidit, $date, $LotsId));
 
                         
                     }
                 }
-                $insertLot = $bdd->prepare("INSERT INTO lots(nom) VALUES (?)");
-                $insertLot->execute(array($_POST['nomLot']));
+               
+                // $requete = $bdd->query('SELECT lots.id FROM lots INNER JOIN pass ON lots.id=pass.lots_id');
+                // var_dump($requete);
 
-
+                // $jointure = "SELECT lots_id FROM pass LEFT JOIN lots ON pass.lots_id=lots.id"
 
             }
     }
